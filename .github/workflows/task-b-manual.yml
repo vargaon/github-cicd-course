@@ -1,0 +1,39 @@
+name: task-b manual
+
+on: 
+  workflow_dispatch:
+    inputs:
+      message:
+        description: 'Message'
+        required: true
+        default: 'Hello CI/CD'
+      # TODO: add tag input
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  docker:
+    runs-on: "ubuntu-latest"
+    name: Docker build
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+      - name: Replace message in index.hml
+        run: sed -i "s#DEFAULT_MESSAGE#${{ inputs.message }}#" ./task_b/index.html
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Log in to GitHub container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io/${{ github.repository }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN  }}
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: type=ref,event=tag
+      # TODO: build and push docker image
+  # TODO: Add test job
